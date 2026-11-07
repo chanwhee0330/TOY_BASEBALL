@@ -1,0 +1,73 @@
+# Visual Studio per-user settings and caches
+.vs/
+ipch/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.sdf
+*.opensdf
+*.opendb
+*.aps
+
+# Visual Studio build output directories
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+/x64/
+/x86/
+/ARM/
+/ARM64/
+/bin/
+/obj/
+
+# CMake-generated build files
+[Bb]uild/
+cmake-build-*/
+/out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+CMakeUserPresets.json
+
+# Compiler, linker and debugger intermediates
+*.o
+*.pch
+*.gch
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
+*.idb
+*.exp
+*.res
+*.tlog/
+*.lastbuildstate
+*.VC.db-shm
+*.VC.db-wal
+
+# Local executables, logs and temporary files
+*.exe
+*.log
+*.tmp
+*.temp
+*.bak
+*.asv
+~$*
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Keep shared source and project files under version control:
+# .sln, .vcxproj, .vcxproj.filters, shaders and documents.
+# Do not ignore *.obj globally: they are also 3D model assets.
+# Keep *.mtl, textures, and required third-party *.lib / *.dll files.
+# Place compiler-generated .obj files inside the ignored build directories.
