@@ -1,0 +1,17 @@
+# materials for hole.obj
+
+newmtl hole_dark
+Ka 0.060 0.090 0.110
+Kd 0.060 0.090 0.110
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl hole_rim
+Ka 0.910 0.930 0.950
+Kd 0.910 0.930 0.950
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
