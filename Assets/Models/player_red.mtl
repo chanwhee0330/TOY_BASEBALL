@@ -1,0 +1,33 @@
+# materials for player_red.obj
+
+newmtl team_red
+Ka 0.860 0.250 0.220
+Kd 0.860 0.250 0.220
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl skin
+Ka 0.960 0.800 0.660
+Kd 0.960 0.800 0.660
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl pants
+Ka 0.950 0.950 0.930
+Kd 0.950 0.950 0.930
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl fig_base
+Ka 0.170 0.190 0.220
+Kd 0.170 0.190 0.220
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
