@@ -64,6 +64,7 @@ MATERIALS = {            # 이름: (R, G, B)  /  발광은 EMISSIVE 에 추가
     'hole_rim':    (0.91, 0.93, 0.95),
 }
 EMISSIVE = {'bulb': (0.9, 0.85, 0.6)}
+TEXTURES = {}           # 재질 이름: 텍스처 파일 (map_Kd). 소품 스크립트에서 채운다
 
 
 # ----------------------------------------------------------------------------
@@ -74,10 +75,14 @@ class Mesh:
         self.G = np.asarray(to_world, float)   # 3x3: 로컬 (a,y,b) -> 월드 (x,y,z)
         self.tris = {}                         # 재질 -> [(p0,p1,p2), ...] 월드 좌표
 
-    def face(self, mat, pts, away=None, toward=None):
+    def face(self, mat, pts, away=None, toward=None, normal=None, smooth=None, uv=None):
         """볼록 다각형 한 장. away: 이 점에서 멀어지는 쪽이 앞면,
-        toward: 이 점을 향하는 쪽이 앞면, 둘 다 없으면 +Y 가 앞면."""
+        toward: 이 점을 향하는 쪽이 앞면, normal: 이 방향이 앞면,
+        셋 다 없으면 +Y 가 앞면. smooth: 꼭짓점별 법선(부드러운 음영용),
+        uv: 꼭짓점별 텍스처 좌표."""
         P = [self.G @ np.asarray(p, float) for p in pts]
+        N = [self.G @ np.asarray(q, float) for q in smooth] if smooth is not None else None
+        U = list(uv) if uv is not None else None
         n = np.zeros(3)
         for i in range(len(P)):
             p, q = P[i], P[(i + 1) % len(P)]
@@ -87,20 +92,30 @@ class Mesh:
             want = c - self.G @ np.asarray(away, float)
         elif toward is not None:
             want = self.G @ np.asarray(toward, float) - c
+        elif normal is not None:
+            want = self.G @ np.asarray(normal, float)
         else:
             want = np.array([0.0, 1.0, 0.0])
         if np.dot(n, want) < 0:
             P.reverse()
+            if N:
+                N.reverse()
+            if U:
+                U.reverse()
         for i in range(1, len(P) - 1):
             a, b, c2 = P[0], P[i], P[i + 1]
             if np.linalg.norm(np.cross(b - a, c2 - a)) > 1e-9:
-                self.tris.setdefault(mat, []).append((a, b, c2))
+                self.tris.setdefault(mat, []).append((
+                    (a, b, c2),
+                    (N[0], N[i], N[i + 1]) if N else None,
+                    (U[0], U[i], U[i + 1]) if U else None))
 
     def count(self):
         return sum(len(t) for t in self.tris.values())
 
     def write(self, obj_path, mtl_name, title):
         verts, vidx, norms, nidx = [], {}, [], {}
+        uvs, uidx = ([(0.0, 0.0)], {}) if DUMMY_VT else ([], {})
 
         def vid(p):
             k = tuple(round(float(x), 4) + 0.0 for x in p)
@@ -116,16 +131,29 @@ class Mesh:
                 norms.append(k)
             return nidx[k]
 
+        def uid(q):
+            k = (round(float(q[0]), 5), round(float(q[1]), 5))
+            if k not in uidx:
+                uidx[k] = len(uvs) + 1
+                uvs.append(k)
+            return uidx[k]
+
         groups = []
         for mat in MATERIALS:
             if mat not in self.tris:
                 continue
             faces = []
-            for a, b, c in self.tris[mat]:
-                n = np.cross(b - a, c - a)
-                n = n / np.linalg.norm(n)
-                ni = nid(n)
-                faces.append((vid(a), vid(b), vid(c), ni))
+            for (a, b, c), tn, tuv in self.tris[mat]:
+                if tn is not None:
+                    ns = [nid(q / np.linalg.norm(q)) for q in tn]
+                else:
+                    n = np.cross(b - a, c - a)
+                    ns = [nid(n / np.linalg.norm(n))] * 3
+                if tuv is not None:
+                    ts = [uid(q) for q in tuv]
+                else:
+                    ts = [1, 1, 1] if DUMMY_VT else None
+                faces.append(((vid(a), vid(b), vid(c)), ns, ts))
             groups.append((mat, faces))
 
         with open(obj_path, 'w', encoding='ascii', newline='\n') as f:
@@ -136,29 +164,31 @@ class Mesh:
             f.write('mtllib %s\n' % mtl_name)
             for v in verts:
                 f.write('v %.4f %.4f %.4f\n' % v)
-            if DUMMY_VT:
-                f.write('vt 0.0 0.0\n')
+            for q in uvs:
+                f.write('vt %.5f %.5f\n' % q)
             for n in norms:
                 f.write('vn %.4f %.4f %.4f\n' % n)
             for mat, faces in groups:
                 f.write('g %s\nusemtl %s\n' % (mat, mat))
-                for a, b, c, n in faces:
-                    if DUMMY_VT:
-                        f.write('f %d/1/%d %d/1/%d %d/1/%d\n' % (a, n, b, n, c, n))
+                for vs, ns, ts in faces:
+                    if ts is not None:
+                        f.write('f ' + ' '.join('%d/%d/%d' % (vs[k], ts[k], ns[k]) for k in range(3)) + '\n')
                     else:
-                        f.write('f %d//%d %d//%d %d//%d\n' % (a, n, b, n, c, n))
+                        f.write('f ' + ' '.join('%d//%d' % (vs[k], ns[k]) for k in range(3)) + '\n')
 
         with open(os.path.join(os.path.dirname(obj_path), mtl_name), 'w',
                   encoding='ascii', newline='\n') as f:
             f.write('# materials for %s\n' % os.path.basename(obj_path))
             for mat, _ in groups:
-                r, g, b = MATERIALS[mat]
+                r, g, b = (1.0, 1.0, 1.0) if mat in TEXTURES else MATERIALS[mat]
                 f.write('\nnewmtl %s\n' % mat)
                 f.write('Ka %.3f %.3f %.3f\n' % (r, g, b))
                 f.write('Kd %.3f %.3f %.3f\n' % (r, g, b))
                 f.write('Ks 0.050 0.050 0.050\nNs 8.0\n')
                 if mat in EMISSIVE:
                     f.write('Ke %.3f %.3f %.3f\n' % EMISSIVE[mat])
+                if mat in TEXTURES:
+                    f.write('map_Kd %s\n' % TEXTURES[mat])
                 f.write('d 1.0\nillum 2\n')
 
 
@@ -531,7 +561,7 @@ def main():
     for name, mesh, title in (('stadium', build_stadium(), 'Toy baseball stadium'),
                               ('hole', build_hole(), 'Fielder hole (moving out pocket)')):
         mesh.write(os.path.join(out, name + '.obj'), name + '.mtl', title)
-        allp = np.array([p for ts in mesh.tris.values() for t in ts for p in t])
+        allp = np.array([p for ts in mesh.tris.values() for t in ts for p in t[0]])
         print('%s.obj: %d triangles, bbox min %s max %s' % (
             name, mesh.count(), np.round(allp.min(0), 2), np.round(allp.max(0), 2)))
         for mat, ts in sorted(mesh.tris.items(), key=lambda kv: -len(kv[1])):
