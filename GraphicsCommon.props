@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <GraphicsProjectRoot>$(MSBuildThisFileDirectory)</GraphicsProjectRoot>
+    <GraphicsDependencyRoot>$(GraphicsProjectRoot)Dependencies\</GraphicsDependencyRoot>
+    <OutDir>$(GraphicsProjectRoot)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(GraphicsProjectRoot)obj\$(Platform)\$(Configuration)\</IntDir>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>GLFW_DLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(GraphicsDependencyRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'!='Debug'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(GraphicsDependencyRoot)lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <GraphicsRuntimeFile Include="$(GraphicsDependencyRoot)bin\$(Platform)\glew32.dll;$(GraphicsDependencyRoot)bin\$(Platform)\glfw3.dll" />
+    <GraphicsRuntimeFile Include="$(GraphicsProjectRoot)Game\*.glsl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\stadium.obj;$(GraphicsProjectRoot)Assets\Models\stadium.mtl" />
+    <UpToDateCheckInput Include="@(GraphicsRuntimeFile);@(GraphicsModelFile)" />
+    <UpToDateCheckOutput Include="@(GraphicsRuntimeFile->'$(OutDir)%(Filename)%(Extension)');@(GraphicsModelFile->'$(OutDir)Assets\Models\%(Filename)%(Extension)')" />
+  </ItemGroup>
+  <Target Name="CopyGraphicsRuntimeFiles" AfterTargets="Build">
+    <Copy SourceFiles="@(GraphicsRuntimeFile)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(GraphicsModelFile)" DestinationFolder="$(OutDir)Assets\Models\" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
