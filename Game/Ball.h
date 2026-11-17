@@ -30,6 +30,8 @@ public:
 	float PlateCrossingFraction() const { return plateCrossingFraction; }
 
 	bool InFlight() const { return flying; }
+	bool IsFieldable() const { return flying && batted && !clearedFence; }
+	void ResolveFielding(bool touchedDefense);
 	const glm::vec3& Position() const { return position; }
 	static float Radius();
 

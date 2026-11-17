@@ -51,6 +51,20 @@ float Ball::Radius()
 	return BALL_RADIUS;
 }
 
+void Ball::ResolveFielding(bool touchedDefense)
+{
+	if (!IsFieldable() || (!touchedDefense && velocity != glm::vec3(0.0f))) return;
+
+	// 경기장 모델과 동일하게 마운드 중심에서 내야 흙의 바깥 경계까지 판정한다.
+	constexpr float moundZ = -6.05f;
+	constexpr float infieldRadius = 9.5f;
+	const glm::vec2 fromMound(position.x, position.z - moundZ);
+	const bool infield = glm::dot(fromMound, fromMound) <= infieldRadius * infieldRadius;
+	std::cout << "  " << (touchedDefense || infield ? "OUT" : "SINGLE") << '\n';
+	velocity = glm::vec3(0.0f);
+	flying = false;
+}
+
 void Ball::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection) const
 {
 	if (!flying) return;
@@ -163,7 +177,6 @@ void Ball::Update(float deltaTime)
 			if (rollingSpeed <= ROLL_STOP_SPEED)
 			{
 				velocity = glm::vec3(0.0f);
-				flying = false;
 				return;
 			}
 			const float timeToStop = (rollingSpeed - ROLL_STOP_SPEED) / ROLL_DECELERATION;
@@ -225,7 +238,6 @@ void Ball::Update(float deltaTime)
 			const float reboundSpeed = impactSpeed * GROUND_RESTITUTION;
 			if (reboundSpeed >= BOUNCE_SPEED_THRESHOLD) velocity.y = reboundSpeed;
 		}
-		if (velocity == glm::vec3(0.0f)) flying = false;
 		return;
 	}
 

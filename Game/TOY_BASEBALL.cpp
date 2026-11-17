@@ -22,6 +22,7 @@
 #include "Mesh.h"
 #include "Pitcher.h"
 #include "PitchingMachine.h"
+#include "Player.h"
 
 //--- 셰이더, 출력 함수
 std::string filetobuf(const std::filesystem::path& filePath);
@@ -36,10 +37,86 @@ GLint width = 1200;
 GLint height = 800;
 GLuint shaderProgramID = 0;
 Mesh stadium;
+Mesh fielder;
+Mesh outPocket;
 Pitcher pitcher;
 PitchingMachine pitchingMachine;
 Batter batter;
 Ball ball;
+
+struct FielderPatrol
+{
+	glm::vec3 center;
+	glm::vec3 travel;
+	double period;
+	double phase;
+};
+
+// 발밑 중심 좌표, 왕복 변위, 왕복 주기(초), 시작 위상.
+// 내야수는 가까운 1루–2루 또는 3루–2루 베이스라인과 평행하게 움직인다.
+const FielderPatrol fielderPatrols[] = {
+	{{ 5.4f, 0.04f,  -9.6f}, {0.65f, 0,  0.65f}, 3.7, 0.0}, // 1루수
+	{{ 2.9f, 0.04f, -12.1f}, {0.78f, 0,  0.78f}, 4.2, 1.0}, // 2루수
+	{{-5.4f, 0.04f,  -9.6f}, {0.65f, 0, -0.65f}, 3.9, 2.4}, // 3루수
+	{{-3.8f, 0.04f, -12.1f}, {0.78f, 0, -0.78f}, 4.4, 3.1}, // 유격수
+	{{-10.5f, 0.02f, -18.0f}, {1.70f, 0, 0.00f}, 5.1, 0.7}, // 좌익수
+	{{  0.0f, 0.02f, -22.7f}, {2.10f, 0, 0.00f}, 5.6, 2.0}, // 중견수
+	{{ 10.5f, 0.02f, -18.0f}, {1.70f, 0, 0.00f}, 5.3, 3.7}  // 우익수
+};
+
+constexpr float pocketScale = 0.55f;
+constexpr float pocketDistance = 1.05f;
+
+struct FielderPose
+{
+	glm::vec3 position;
+	glm::vec3 forward;
+	glm::vec3 pocketPosition;
+};
+
+FielderPose getFielderPose(const FielderPatrol& patrol, double now)
+{
+	constexpr double fullTurn = 6.283185307179586;
+	const float offset = static_cast<float>(std::sin(fullTurn * now / patrol.period + patrol.phase));
+	const glm::vec3 position = patrol.center + offset * patrol.travel;
+	const glm::vec3 forward = glm::normalize(glm::vec3(-position.x, 0.0f, -position.z));
+	return {position, forward, position + pocketDistance * forward + glm::vec3(0.0f, 0.002f, 0.0f)};
+}
+
+void drawFielders(const glm::mat4& viewProjection, double now)
+{
+	for (const FielderPatrol& patrol : fielderPatrols)
+	{
+		const FielderPose pose = getFielderPose(patrol, now);
+		const float yaw = glm::degrees(std::atan2(pose.forward.x, pose.forward.z));
+		drawMesh(shaderProgramID, outPocket, placeOnField(pose.pocketPosition, yaw, pocketScale), viewProjection);
+		drawMesh(shaderProgramID, fielder, placeOnField(pose.position, yaw, PLAYER_SCALE), viewProjection);
+	}
+}
+
+bool ballTouchesCylinder(const glm::vec3& ballPosition, const glm::vec3& base, float radius, float height)
+{
+	const glm::vec3 relative = ballPosition - base;
+	const float horizontalGap = glm::max(0.0f, glm::length(glm::vec2(relative.x, relative.z)) - radius);
+	const float verticalGap = relative.y - glm::clamp(relative.y, 0.0f, height);
+	return horizontalGap * horizontalGap + verticalGap * verticalGap <= Ball::Radius() * Ball::Radius();
+}
+
+bool touchesDefense(const glm::vec3& ballPosition, double now)
+{
+	for (const FielderPatrol& patrol : fielderPatrols)
+	{
+		const FielderPose pose = getFielderPose(patrol, now);
+		const glm::vec3 arms = pose.position + PLAYER_SCALE * (0.4f * pose.forward + glm::vec3(0, 0.75f, 0));
+		if (ballTouchesCylinder(ballPosition, pose.pocketPosition, 1.27f * pocketScale, 0.13f * pocketScale)
+			|| ballTouchesCylinder(ballPosition, pose.position, 0.44f * PLAYER_SCALE, 2.205f * PLAYER_SCALE)
+			|| ballTouchesCylinder(ballPosition, arms, 0.58f * PLAYER_SCALE, 0.61f * PLAYER_SCALE))
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 constexpr GLsizei SHADOW_MAP_SIZE = 2048;
 GLuint shadowFramebuffer = 0;
@@ -101,12 +178,16 @@ int main()
 	const auto modelDirectory = programDirectory / "Assets" / "Models";
 	if (shaderProgramID == 0
 		|| !InitBuffer(modelDirectory / "stadium.obj", stadium)
+		|| !InitBuffer(modelDirectory / "fielder_red.obj", fielder)
+		|| !InitBuffer(modelDirectory / "hole.obj", outPocket)
 		|| !pitcher.Init(modelDirectory)
 		|| !pitchingMachine.Init(modelDirectory)
 		|| !batter.Init(modelDirectory)
 		|| !ball.Init(modelDirectory))
 	{
 		DeleteBuffer(stadium);
+		DeleteBuffer(fielder);
+		DeleteBuffer(outPocket);
 		pitcher.Delete();
 		pitchingMachine.Delete();
 		batter.Delete();
@@ -148,8 +229,10 @@ int main()
 			const float stepTime = deltaTime / steps;
 			for (int step = 1; step <= steps; ++step)
 			{
+				const double stepEnd = now - (steps - step) * stepTime;
 				ball.Update(stepTime);
-				batter.CheckContact(now - (steps - step) * stepTime, stepTime, stance, ball);
+				batter.CheckContact(stepEnd, stepTime, stance, ball);
+				if (ball.IsFieldable()) ball.ResolveFielding(touchesDefense(ball.Position(), stepEnd));
 			}
 		}
 		drawScene(now, stance);
@@ -158,6 +241,8 @@ int main()
 	}
 
 	DeleteBuffer(stadium);
+	DeleteBuffer(fielder);
+	DeleteBuffer(outPocket);
 	pitcher.Delete();
 	pitchingMachine.Delete();
 	batter.Delete();
@@ -274,6 +359,7 @@ bool initShadowMap()
 void drawShadowCasters(const glm::mat4& viewProjection, double now, int stance)
 {
 	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
+	drawFielders(viewProjection, now);
 	pitcher.Draw(shaderProgramID, viewProjection);
 	pitchingMachine.Draw(shaderProgramID, viewProjection);
 	batter.Draw(shaderProgramID, viewProjection, now, stance);
@@ -337,6 +423,7 @@ GLvoid drawScene(double now, int stance)
 	}
 	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
 	glUniform1i(shadowLocation, GL_FALSE);
+	drawFielders(viewProjection, now);
 	pitcher.Draw(shaderProgramID, viewProjection);
 	pitchingMachine.Draw(shaderProgramID, viewProjection);
 	batter.Draw(shaderProgramID, viewProjection, now, stance);

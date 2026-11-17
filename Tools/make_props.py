@@ -7,6 +7,8 @@
        Assets/Models/bat.obj          배트. 원점 = 손잡이 끝(회전축), +X 방향으로 뻗음
        Assets/Models/player_red.obj   선수 인형(빨강 팀). 원점 = 발밑 중심, +Z 를 바라봄
        Assets/Models/player_blue.obj  선수 인형(파랑 팀)
+       Assets/Models/fielder_red.obj  포구 준비 자세의 수비수(빨강 팀)
+       Assets/Models/fielder_blue.obj 수비수(파랑 팀)
 
 선수 인형 하나를 투수, 타자, 주자에 모두 쓴다. 위치와 방향은 코드에서 정한다.
 """
@@ -35,6 +37,8 @@ ms.MATERIALS.update({
     'skin':      (0.96, 0.80, 0.66),
     'pants':     (0.95, 0.95, 0.93),
     'fig_base':  (0.17, 0.19, 0.22),
+    'glove':     (0.67, 0.40, 0.21),
+    'glove_pocket': (0.39, 0.21, 0.11),
 })
 ms.TEXTURES['ball'] = BALL_TEX
 
@@ -134,7 +138,44 @@ def build_bat():
     return m
 
 
-def build_player(team):
+def add_fielding_arms(m, team):
+    # 홈플레이트 쪽(+Z)을 향해 양팔을 내민 자세.
+    for side in (-1, 1):
+        shoulder = np.array((0.36 * side, 1.32, 0.00))
+        elbow = np.array((0.54 * side, 0.98, 0.24))
+        hand = np.array((0.31 * side, 1.02, 0.64))
+        for start, end in ((shoulder, elbow), (elbow, hand)):
+            axis = end - start
+            axis /= np.linalg.norm(axis)
+            across = np.cross(axis, (0, 1, 0))
+            across /= np.linalg.norm(across)
+            up = np.cross(axis, across)
+            pts = [center + radius * (u * across + v * up)
+                   for center, radius in ((start - 0.05 * axis, 0.105),
+                                          (end + 0.05 * axis, 0.09))
+                   for u, v in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            ms.hexa(m, pts, team)
+        if side == -1:
+            sphere(m, 'skin', hand, 0.115, segs=8, rings=6)
+
+    # +Z에서 보면 장갑 가장자리와 안쪽 포켓이 보인다.
+    center = np.array((0.27, 1.09, 0.72))
+    rings = []
+    for rx, ry, z in ((0.13, 0.16, -0.09), (0.24, 0.27, 0.10),
+                      (0.18, 0.21, 0.12), (0.095, 0.12, 0.025)):
+        rings.append([center + (rx * math.cos(a), ry * math.sin(a), z)
+                      for a in (2 * math.pi * i / SEGS for i in range(SEGS))])
+    for i in range(SEGS):
+        j = (i + 1) % SEGS
+        m.face('glove', [center + (0, 0, -0.09), rings[0][i], rings[0][j]], normal=(0, 0, -1))
+        m.face('glove', [rings[0][i], rings[0][j], rings[1][j], rings[1][i]], away=center)
+        for outer, inner, material in ((1, 2, 'glove'), (2, 3, 'glove_pocket')):
+            m.face(material, [rings[outer][i], rings[outer][j], rings[inner][j], rings[inner][i]],
+                   normal=(0, 0, 1))
+        m.face('glove_pocket', [center + (0, 0, 0.025), rings[3][i], rings[3][j]], normal=(0, 0, 1))
+
+
+def build_player(team, fielding=False):
     m = Mesh(np.eye(3))
     # 받침, 다리, 몸통
     lathe(m, [(0.55, 0.00, 'fig_base'), (0.55, 0.08, 'fig_base'), (0.48, 0.14, 'fig_base'),
@@ -152,6 +193,10 @@ def build_player(team):
              (tip[i + 1][0], 1.84, tip[i + 1][1]), (tip[i][0], 1.84, tip[i][1])]
         m.face(team, q, normal=(0, 1, 0))
         m.face(team, q, normal=(0, -1, 0))
+    if fielding:
+        add_fielding_arms(m, team)
+        return m
+
     # 팔 (살짝 벌린 상자) + 손
     for s in (-1, 1):
         A = ms.frame(0.47 * s, 0.0, y=1.36, pitch=0)
@@ -173,7 +218,9 @@ def main():
     jobs = (('ball', build_ball(), 'Ball (origin = center)'),
             ('bat', build_bat(), 'Bat (origin = knob end / pivot, extends along +X)'),
             ('player_red', build_player('team_red'), 'Player figure, red team (origin = feet, faces +Z)'),
-            ('player_blue', build_player('team_blue'), 'Player figure, blue team (origin = feet, faces +Z)'))
+            ('player_blue', build_player('team_blue'), 'Player figure, blue team (origin = feet, faces +Z)'),
+            ('fielder_red', build_player('team_red', fielding=True), 'Fielder figure, red team (origin = feet, faces +Z)'),
+            ('fielder_blue', build_player('team_blue', fielding=True), 'Fielder figure, blue team (origin = feet, faces +Z)'))
     make_ball_texture(os.path.join(out, BALL_TEX))
     for name, mesh, title in jobs:
         mesh.write(os.path.join(out, name + '.obj'), name + '.mtl', title)

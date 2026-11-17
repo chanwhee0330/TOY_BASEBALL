@@ -33,6 +33,8 @@
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\stadium.obj;$(GraphicsProjectRoot)Assets\Models\stadium.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_red.obj;$(GraphicsProjectRoot)Assets\Models\player_red.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_blue.obj;$(GraphicsProjectRoot)Assets\Models\player_blue.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\fielder_red.obj;$(GraphicsProjectRoot)Assets\Models\fielder_red.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\hole.obj;$(GraphicsProjectRoot)Assets\Models\hole.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\bat.obj;$(GraphicsProjectRoot)Assets\Models\bat.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\ball.obj;$(GraphicsProjectRoot)Assets\Models\ball.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\pitching_machine.obj;$(GraphicsProjectRoot)Assets\Models\pitching_machine.mtl" />
