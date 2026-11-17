@@ -35,6 +35,7 @@
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_blue.obj;$(GraphicsProjectRoot)Assets\Models\player_blue.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\bat.obj;$(GraphicsProjectRoot)Assets\Models\bat.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\ball.obj;$(GraphicsProjectRoot)Assets\Models\ball.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\pitching_machine.obj;$(GraphicsProjectRoot)Assets\Models\pitching_machine.mtl" />
     <UpToDateCheckInput Include="@(GraphicsRuntimeFile);@(GraphicsModelFile)" />
     <UpToDateCheckOutput Include="@(GraphicsRuntimeFile->'$(OutDir)%(Filename)%(Extension)');@(GraphicsModelFile->'$(OutDir)Assets\Models\%(Filename)%(Extension)')" />
   </ItemGroup>

@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -16,9 +17,11 @@
 #include <string>
 #include <vector>
 
+#include "Ball.h"
 #include "Batter.h"
 #include "Mesh.h"
 #include "Pitcher.h"
+#include "PitchingMachine.h"
 
 //--- 셰이더, 출력 함수
 std::string filetobuf(const std::filesystem::path& filePath);
@@ -32,7 +35,9 @@ GLint height = 800;
 GLuint shaderProgramID = 0;
 Mesh stadium;
 Pitcher pitcher;
+PitchingMachine pitchingMachine;
 Batter batter;
+Ball ball;
 
 int main()
 {
@@ -84,11 +89,15 @@ int main()
 	if (shaderProgramID == 0
 		|| !InitBuffer(modelDirectory / "stadium.obj", stadium)
 		|| !pitcher.Init(modelDirectory)
-		|| !batter.Init(modelDirectory))
+		|| !pitchingMachine.Init(modelDirectory)
+		|| !batter.Init(modelDirectory)
+		|| !ball.Init(modelDirectory))
 	{
 		DeleteBuffer(stadium);
 		pitcher.Delete();
+		pitchingMachine.Delete();
 		batter.Delete();
+		ball.Delete();
 		if (shaderProgramID != 0) glDeleteProgram(shaderProgramID);
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -100,9 +109,21 @@ int main()
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 
+	// 지금은 1P(W·A·S·D)가 투구한다. 공수 교대를 만들면 수비하는 쪽 키로 SetKeys를 바꾼다.
+	pitchingMachine.SetKeys(PITCH_KEYS_1P);
+	std::cout << "Pitching (1P): A/D = aim left/right, hold and release W = fastball, S = breaking ball\n";
+
 	//--- 메인 루프
+	double lastTime = glfwGetTime();
 	while (glfwWindowShouldClose(window) == GLFW_FALSE)
 	{
+		// 프레임 사이 시간. 창을 끌 때처럼 오래 멈췄다 돌아와도 공이 순간이동하지 않게 줄인다.
+		const double now = glfwGetTime();
+		const float deltaTime = static_cast<float>((std::min)(now - lastTime, 0.05)); // Windows.h의 min 매크로를 피하려고 괄호로 감싼다
+		lastTime = now;
+
+		pitchingMachine.Update(window, deltaTime, ball);
+		ball.Update(deltaTime);
 		drawScene();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -110,7 +131,9 @@ int main()
 
 	DeleteBuffer(stadium);
 	pitcher.Delete();
+	pitchingMachine.Delete();
 	batter.Delete();
+	ball.Delete();
 	glDeleteProgram(shaderProgramID);
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -216,9 +239,11 @@ GLvoid drawScene()
 
 	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
 	pitcher.Draw(shaderProgramID, viewProjection);
+	pitchingMachine.Draw(shaderProgramID, viewProjection);
 	// 왼쪽만 누르면 -1, 오른쪽만 누르면 1, 나머지는 0이다.
 	const int stance = glfwGetKey(window, GLFW_KEY_RIGHT) - glfwGetKey(window, GLFW_KEY_LEFT);
 	batter.Draw(shaderProgramID, viewProjection, glfwGetTime(), stance);
+	ball.Draw(shaderProgramID, viewProjection);
 
 	glBindVertexArray(0);
 }
