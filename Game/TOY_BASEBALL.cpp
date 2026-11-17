@@ -217,11 +217,14 @@ GLvoid drawScene()
 	glBindVertexArray(VAO);
 
 	const glm::mat4 model(1.0f);
-	const glm::mat4 view = glm::lookAt(glm::vec3(0, 33, 26), glm::vec3(0, 0, -14), glm::vec3(0, 1, 0));
+	// 홈플레이트 바로 뒤 낮은 곳에서 2루 쪽을 내려다본다.
+	// 타자와 홈이 화면 아래에 크게, 1·3루가 화면 가운데쯤, 외야 펜스가 화면 위 끝에 온다.
+	const glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.5f, 4.0f), glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0, 1, 0));
 	const float aspect = static_cast<float>(width) / static_cast<float>(height);
-	const float baseFov = glm::radians(45.0f);
-	// 창이 좁아져도 경기장의 좌우 관중석이 잘리지 않게 한다.
-	const float fov = aspect < 1.5f ? 2.0f * std::atan(std::tan(baseFov / 2) * 1.5f / aspect) : baseFov;
+	const float baseFov = glm::radians(54.0f);
+	// 기본 창(3:2)보다 좁아지면 세로 시야를 넓혀 1·3루가 화면 밖으로 나가지 않게 한다.
+	const float minAspect = 1.5f;
+	const float fov = aspect < minAspect ? 2.0f * std::atan(std::tan(baseFov / 2) * minAspect / aspect) : baseFov;
 	const glm::mat4 projection = glm::perspective(fov, aspect, 1.0f, 200.0f);
 	const glm::mat4 transform = projection * view * model;
 
