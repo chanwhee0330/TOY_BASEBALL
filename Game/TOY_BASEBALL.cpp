@@ -189,7 +189,8 @@ GLuint make_shaderProgram(const std::filesystem::path& programDirectory)
 
 GLvoid drawScene()
 {
-	glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
+	GLFWwindow* window = glfwGetCurrentContext();
+	glfwGetFramebufferSize(window, &width, &height);
 	if (width == 0 || height == 0) return;
 	glViewport(0, 0, width, height);
 	glClearColor(0.10f, 0.13f, 0.18f, 1.0f);
@@ -215,15 +216,23 @@ GLvoid drawScene()
 
 	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
 	pitcher.Draw(shaderProgramID, viewProjection);
-	batter.Draw(shaderProgramID, viewProjection);
+	// 왼쪽만 누르면 -1, 오른쪽만 누르면 1, 나머지는 0이다.
+	const int stance = glfwGetKey(window, GLFW_KEY_RIGHT) - glfwGetKey(window, GLFW_KEY_LEFT);
+	batter.Draw(shaderProgramID, viewProjection, glfwGetTime(), stance);
 
 	glBindVertexArray(0);
 }
 
 void keyCallback(GLFWwindow* window, int key, int, int action, int)
 {
-	if (action == GLFW_PRESS && (key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE))
+	if (action != GLFW_PRESS) return;
+
+	if (key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE)
 	{
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	}
+	else if (key == GLFW_KEY_UP || key == GLFW_KEY_DOWN)
+	{
+		batter.StartSwing(glfwGetTime(), key == GLFW_KEY_DOWN);
 	}
 }
