@@ -38,12 +38,14 @@
     <ClCompile Include="Pitcher.cpp" />
     <ClCompile Include="Batter.cpp" />
     <ClCompile Include="PitchingMachine.cpp" />
+    <ClCompile Include="Ball.cpp" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Pitcher.h" />
     <ClInclude Include="Batter.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PitchingMachine.h" />
+    <ClInclude Include="Ball.h" />
     <None Include="vertex.glsl" />
     <None Include="fragment.glsl" />
     <None Include="..\Assets\Models\stadium.obj" />
