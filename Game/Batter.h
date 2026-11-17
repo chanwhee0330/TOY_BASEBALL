@@ -6,6 +6,8 @@
 
 #include "Mesh.h"
 
+class Ball;
+
 //--- 타자: 3루 쪽(왼쪽) 타석에 서서 홈플레이트를 바라본다. (공격 팀, 파랑)
 // 오른손으로 배트를 쥐고 어깨 뒤로 세워 든다.
 class Batter
@@ -13,6 +15,7 @@ class Batter
 public:
 	bool Init(const std::filesystem::path& modelDirectory);
 	void StartSwing(double now, bool lowSwing);
+	void CheckContact(double stepEnd, float stepTime, int stance, Ball& ball);
 	void Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance) const;
 	void Delete();
 
@@ -25,4 +28,5 @@ private:
 	float yaw = 90.0f; // 홈플레이트(+X)를 바라본다
 	double swingStartTime = -1.0;
 	bool lowSwing = false;
+	bool connected = false;
 };

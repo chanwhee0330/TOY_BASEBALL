@@ -1,7 +1,10 @@
 #include "Batter.h"
 
+#include <cmath>
+
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Ball.h"
 #include "Player.h"
 
 namespace
@@ -23,6 +26,9 @@ namespace
 	constexpr double RECOVERY_TIME = 0.30;
 	constexpr double RECOVERY_START = SWING_TIME + FALL_TIME + DOWN_TIME;
 	constexpr double SWING_DURATION = RECOVERY_START + RECOVERY_TIME;
+	constexpr double HIT_DURATION = SWING_TIME + RECOVERY_TIME;
+	constexpr double CONTACT_CENTER = 0.10;
+	constexpr double CONTACT_HALF_WINDOW = 0.055;
 	constexpr float SWING_ANGLE = 360.0f;
 	constexpr float STANCE_STEP = meters(0.45f);
 }
@@ -35,11 +41,26 @@ bool Batter::Init(const std::filesystem::path& modelDirectory)
 
 void Batter::StartSwing(double now, bool aimLow)
 {
-	if (now - swingStartTime >= SWING_DURATION)
+	if (now - swingStartTime >= (connected ? HIT_DURATION : SWING_DURATION))
 	{
 		swingStartTime = now;
 		lowSwing = aimLow;
+		connected = false;
 	}
+}
+
+void Batter::CheckContact(double stepEnd, float stepTime, int stance, Ball& ball)
+{
+	const float crossingFraction = ball.PlateCrossingFraction();
+	if (connected || crossingFraction < 0.0f) return;
+
+	const double crossingTime = stepEnd - (1.0 - crossingFraction) * stepTime;
+	const double timingError = swingStartTime + CONTACT_CENTER - crossingTime;
+	if (std::abs(timingError) > CONTACT_HALF_WINDOW) return;
+
+	const auto swingType = lowSwing ? Ball::PitchType::Breaking : Ball::PitchType::Fastball;
+	connected = ball.TryHit(swingType, stance, timingError, CONTACT_HALF_WINDOW);
+	if (connected) ball.Update((1.0f - crossingFraction) * stepTime);
 }
 
 void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance) const
@@ -48,16 +69,20 @@ void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, doubl
 	float swingOffset = 0.0f;
 	float fallAmount = 0.0f;
 	glm::vec3 batDirection = BAT_DIRECTION;
-	if (elapsed < SWING_DURATION)
+	const double recoveryStart = connected ? SWING_TIME : RECOVERY_START;
+	if (elapsed >= 0.0 && elapsed < recoveryStart + RECOVERY_TIME)
 	{
 		const float swingProgress = static_cast<float>(elapsed / SWING_TIME);
 		swingOffset = SWING_ANGLE * glm::smoothstep(0.0f, 1.0f, swingProgress);
 
 		// 한 바퀴 돌고 나면 등 쪽으로 넘어져 잠깐 멈췄다가 일어난다.
 		const float fallProgress = static_cast<float>((elapsed - SWING_TIME) / FALL_TIME);
-		const float recoveryProgress = static_cast<float>((elapsed - RECOVERY_START) / RECOVERY_TIME);
+		const float recoveryProgress = static_cast<float>((elapsed - recoveryStart) / RECOVERY_TIME);
 		const float recovered = glm::smoothstep(0.0f, 1.0f, recoveryProgress);
-		fallAmount = glm::smoothstep(0.0f, 1.0f, fallProgress) * (1.0f - recovered);
+		if (!connected)
+		{
+			fallAmount = glm::smoothstep(0.0f, 1.0f, fallProgress) * (1.0f - recovered);
+		}
 
 		// 일어날 때 배트를 준비 자세로 들어 올린다.
 		const float batProgress = static_cast<float>(elapsed / BAT_LOWER_TIME);

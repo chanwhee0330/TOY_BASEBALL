@@ -11,8 +11,6 @@ namespace
 
 	// 조준: 홈플레이트(폭 0.367) 양옆으로 공 반지름만큼 더 갈 수 있다
 	constexpr float AIM_LIMIT = 0.28f;
-	// 공이 홈을 지나는 높이: 땅(0.08) 위 85cm, 타자 무릎과 가슴 사이
-	constexpr float STRIKE_Y = 0.08f + meters(0.85f);
 
 	// 속도 (단위/초). 짧게 누르면 느리고, MAX_CHARGE초 이상 누르면 가장 빠르다.
 	constexpr float MAX_CHARGE = 1.2f;
@@ -78,8 +76,8 @@ void PitchingMachine::Update(GLFWwindow* window, float deltaTime, Ball& ball)
 	if (breaking) speed *= BREAKING_RATIO;
 	chargingKey = 0;
 
-	ball.Launch(MouthPosition(), glm::vec3(aimX, STRIKE_Y, 0.0f), speed,
-		breaking ? Ball::PitchType::Breaking : Ball::PitchType::Fastball);
+	const auto pitchType = breaking ? Ball::PitchType::Breaking : Ball::PitchType::Fastball;
+	ball.Launch(MouthPosition(), glm::vec3(aimX, Ball::PlateHeight(pitchType), 0.0f), speed, pitchType);
 	std::cout << keys.name << " pitch: " << (breaking ? "breaking ball" : "fastball") << ' '
 		<< static_cast<int>(toKmh(speed)) << " km/h, aim " << aimX * METERS_PER_UNIT << " m\n";
 	aimX = 0.0f; // 다음 투구는 다시 가운데에서 시작한다

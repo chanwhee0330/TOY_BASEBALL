@@ -40,11 +40,11 @@ MOUND_TOP_R = 0.3      # 마운드 꼭대기 평평한 부분 반지름
 MOUND_H = 0.083        # 마운드 높이 (10in)
 ONDECK_R = 0.25        # 대기 타석 원 반지름 (2.5ft)
 BOARD_MIN, BOARD_MAX = -4.0, FENCE_R + 6.0   # 판 안쪽 바닥 범위 (a, b 공통)
-ARC_SEGS = 27          # 외야 원호 분할 수 (ZONES 칸 수의 배수)
+ARC_SEGS = 28          # 외야 원호 분할 수 (ZONES 칸 수의 배수)
 ROUND_SEGS = 8         # 판 모서리 라운드 분할 수
 DISC_SEGS = 16
 # 펜스 안쪽 색 패널: 1=안타, 2=2루타, 3=3루타 (왼쪽 파울라인 -> 오른쪽, 10도씩 9칸)
-ZONES = [1, 2, 1, 3, 2, 3, 1, 2, 1]
+ZONES = [3, 2, 1, 4, 1, 2, 3]
 DUMMY_VT = True        # True: f v/vt/vn,  False: f v//vn
 
 MATERIALS = {            # 이름: (R, G, B)  /  발광은 EMISSIVE 에 추가
@@ -59,6 +59,7 @@ MATERIALS = {            # 이름: (R, G, B)  /  발광은 EMISSIVE 에 추가
     'zone_1':      (0.96, 0.77, 0.26),
     'zone_2':      (0.94, 0.54, 0.24),
     'zone_3':      (0.89, 0.31, 0.29),
+    'zone_4':      (0.61, 0.36, 0.85),
     'concrete':    (0.73, 0.75, 0.78),
     'seat_a':      (0.91, 0.39, 0.24),
     'seat_b':      (0.25, 0.50, 0.77),

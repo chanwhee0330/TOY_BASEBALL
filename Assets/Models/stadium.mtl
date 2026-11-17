@@ -88,6 +88,14 @@ Ns 8.0
 d 1.0
 illum 2
 
+newmtl zone_4
+Ka 0.610 0.360 0.850
+Kd 0.610 0.360 0.850
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
 newmtl concrete
 Ka 0.730 0.750 0.780
 Kd 0.730 0.750 0.780
