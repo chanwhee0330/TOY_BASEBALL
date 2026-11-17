@@ -16,22 +16,23 @@
 #include <string>
 #include <vector>
 
-#include "Model.h"
+#include "Batter.h"
+#include "Mesh.h"
+#include "Pitcher.h"
 
-//--- 셰이더, 버퍼, 출력 함수
+//--- 셰이더, 출력 함수
 std::string filetobuf(const std::filesystem::path& filePath);
 GLuint make_shader(GLenum type, const std::filesystem::path& filePath);
 GLuint make_shaderProgram(const std::filesystem::path& programDirectory);
-bool InitBuffer(const std::filesystem::path& modelPath);
 GLvoid drawScene();
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 GLint width = 1200;
 GLint height = 800;
 GLuint shaderProgramID = 0;
-GLuint VAO = 0;
-GLuint VBO = 0;
-GLsizei vertexCount = 0;
+Mesh stadium;
+Pitcher pitcher;
+Batter batter;
 
 int main()
 {
@@ -79,8 +80,15 @@ int main()
 	}
 
 	shaderProgramID = make_shaderProgram(programDirectory);
-	if (shaderProgramID == 0 || !InitBuffer(programDirectory / "Assets" / "Models" / "stadium.obj"))
+	const auto modelDirectory = programDirectory / "Assets" / "Models";
+	if (shaderProgramID == 0
+		|| !InitBuffer(modelDirectory / "stadium.obj", stadium)
+		|| !pitcher.Init(modelDirectory)
+		|| !batter.Init(modelDirectory))
 	{
+		DeleteBuffer(stadium);
+		pitcher.Delete();
+		batter.Delete();
 		if (shaderProgramID != 0) glDeleteProgram(shaderProgramID);
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -100,8 +108,9 @@ int main()
 		glfwPollEvents();
 	}
 
-	glDeleteBuffers(1, &VBO);
-	glDeleteVertexArrays(1, &VAO);
+	DeleteBuffer(stadium);
+	pitcher.Delete();
+	batter.Delete();
 	glDeleteProgram(shaderProgramID);
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -178,33 +187,6 @@ GLuint make_shaderProgram(const std::filesystem::path& programDirectory)
 	return shaderID;
 }
 
-bool InitBuffer(const std::filesystem::path& modelPath)
-{
-	std::vector<Vertex> vertices;
-	if (!read_obj_file(modelPath, vertices)) return false;
-	vertexCount = static_cast<GLsizei>(vertices.size());
-
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-
-	//--- 정점 위치, 재질색, 법선, 발광색을 vertex.glsl에 전달한다.
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, color)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, normal)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, emission)));
-	glEnableVertexAttribArray(3);
-	glBindVertexArray(0);
-
-	std::cout << "Stadium loaded: " << vertexCount / 3 << " triangles\n";
-	return true;
-}
-
 GLvoid drawScene()
 {
 	glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
@@ -214,29 +196,26 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shaderProgramID);
-	glBindVertexArray(VAO);
 
-	const glm::mat4 model(1.0f);
 	// 홈플레이트 바로 뒤 낮은 곳에서 2루 쪽을 내려다본다.
 	// 타자와 홈이 화면 아래에 크게, 1·3루가 화면 가운데쯤, 외야 펜스가 화면 위 끝에 온다.
-	const glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.5f, 4.0f), glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0, 1, 0));
+	const glm::mat4 view = glm::lookAt(glm::vec3(0, 1.5, 2), glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0, 1, 0));
 	const float aspect = static_cast<float>(width) / static_cast<float>(height);
 	const float baseFov = glm::radians(54.0f);
 	// 기본 창(3:2)보다 좁아지면 세로 시야를 넓혀 1·3루가 화면 밖으로 나가지 않게 한다.
 	const float minAspect = 1.5f;
 	const float fov = aspect < minAspect ? 2.0f * std::atan(std::tan(baseFov / 2) * minAspect / aspect) : baseFov;
 	const glm::mat4 projection = glm::perspective(fov, aspect, 1.0f, 200.0f);
-	const glm::mat4 transform = projection * view * model;
+	const glm::mat4 viewProjection = projection * view;
 
-	GLint location = glGetUniformLocation(shaderProgramID, "modelTransform");
-	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(transform));
-	location = glGetUniformLocation(shaderProgramID, "model");
-	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(model));
-	location = glGetUniformLocation(shaderProgramID, "lightPos");
+	GLint location = glGetUniformLocation(shaderProgramID, "lightPos");
 	glUniform3f(location, 0.0f, 55.0f, 18.0f);
 	location = glGetUniformLocation(shaderProgramID, "lightColor");
 	glUniform3f(location, 1.0f, 1.0f, 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+
+	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
+	pitcher.Draw(shaderProgramID, viewProjection);
+	batter.Draw(shaderProgramID, viewProjection);
 
 	glBindVertexArray(0);
 }

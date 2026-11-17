@@ -29,6 +29,16 @@ FENCE_R = 27.0         # 홈에서 외야 펜스 안쪽까지
 FENCE_T = 0.5          # 펜스 두께
 FENCE_H = 1.7          # 펜스 높이 (이걸 넘기면 홈런)
 MOUND_D = 6.05         # 홈에서 마운드까지 (2루 방향)
+BASE_HALF = 0.1616     # 베이스 한 변의 절반 (선수 인형 받침 반지름과 같게, 한 변 98cm)
+LINE_W = 0.025         # 파울라인 굵기 (실제 7.6cm)
+# 흙과 잔디 (실제 규격, 1 단위 = 3.048m)
+INFIELD_R = 9.5        # 마운드 중심에서 내야 흙 끝까지 (95ft)
+GRASS_IN = 0.3         # 내야 잔디가 베이스 라인에서 안쪽으로 들어간 거리 (3ft)
+HOME_R = 1.3           # 홈 주변 흙 원 반지름 (13ft)
+MOUND_R = 0.9          # 마운드 반지름 (9ft)
+MOUND_TOP_R = 0.3      # 마운드 꼭대기 평평한 부분 반지름
+MOUND_H = 0.083        # 마운드 높이 (10in)
+ONDECK_R = 0.25        # 대기 타석 원 반지름 (2.5ft)
 BOARD_MIN, BOARD_MAX = -4.0, FENCE_R + 6.0   # 판 안쪽 바닥 범위 (a, b 공통)
 ARC_SEGS = 27          # 외야 원호 분할 수 (ZONES 칸 수의 배수)
 ROUND_SEGS = 8         # 판 모서리 라운드 분할 수
@@ -352,10 +362,10 @@ def build_field(m):
 
     # 내야 흙: 마운드 중심 원을 파울라인으로 자른 모양
     mc = MOUND_D / S2
-    R = 8.6 * BASE_DIST / 9.0
+    R = INFIELD_R
     ang = math.degrees(math.atan2(-mc, math.sqrt(R * R - mc * mc)))
     pts = [(0.0, 0.04, 0.0)]
-    segs = 22
+    segs = 32
     for i in range(segs + 1):
         t = math.radians(ang + (90 - 2 * ang) * i / segs)
         pts.append((mc + R * math.cos(t), 0.04, mc + R * math.sin(t)))
@@ -364,42 +374,49 @@ def build_field(m):
         m.face('dirt', [c, pts[i], pts[(i + 1) % len(pts)]])
 
     # 내야 잔디
-    g0, g1 = 1.3, BASE_DIST - 1.3
-    cap(m, 'grass_a', rrect(g0, g0, g1, g1, 0.5, 3), 0.06)
+    g0, g1 = GRASS_IN, BASE_DIST - GRASS_IN
+    cap(m, 'grass_a', rrect(g0, g0, g1, g1, 0.2, 3), 0.06)
 
     # 홈 주변 흙, 마운드
-    cap(m, 'dirt', circle(0, 0, 2.3), 0.08)
-    cap(m, 'dirt', circle(mc, mc, 1.6), 0.08)
-    loop_strip(m, 'dirt', at(circle(mc, mc, 1.6), 0.08), at(circle(mc, mc, 1.0), 0.26), 'out', (mc, -1.0, mc))
-    cap(m, 'dirt', circle(mc, mc, 1.0), 0.26)
+    top = 0.08 + MOUND_H
+    cap(m, 'dirt', circle(0, 0, HOME_R, 24), 0.08)
+    cap(m, 'dirt', circle(mc, mc, MOUND_R, 24), 0.08)
+    loop_strip(m, 'dirt', at(circle(mc, mc, MOUND_R, 24), 0.08), at(circle(mc, mc, MOUND_TOP_R, 24), top), 'out', (mc, -1.0, mc))
+    cap(m, 'dirt', circle(mc, mc, MOUND_TOP_R, 24), top)
     view = frame(mc, mc, yaw=-45)          # u = 화면 오른쪽, v = 2루 방향
-    box(m, 'line', view, (-0.3, 0.3), (0.26, 0.31), (-0.08, 0.08))
+    box(m, 'line', view, (-0.1, 0.1), (top, top + 0.01), (-0.025, 0.025))   # 투수판 61cm x 15cm
 
     # 파울라인, 파울 폴
+    # 선 굵기 7.6cm. 파울라인은 페어 지역이라 선 전체가 안쪽(v > 0)에 오고,
+    # 타석 바로 바깥(0.5)에서 시작해 1·3루 베이스 바깥 모서리를 따라 펜스까지 간다.
     for sw in (False, True):
         M = frame(swap=sw)
-        plate(m, 'line', M, (2.3, FENCE_R), (-0.09, 0.09), 0.10)
+        plate(m, 'line', M, (0.5, FENCE_R), (0.0, LINE_W), 0.10)
         box(m, 'zone_1', M, (FENCE_R + 0.15, FENCE_R + 0.35), (0.0, 4.6), (-0.1, 0.1))
 
-    # 타석 (좌우), 홈플레이트
+    # 타석 (좌우), 홈플레이트: 실제 규격 (1 단위 = 3.048m)
+    #   타석 1.22m x 1.83m, 안쪽 선이 홈플레이트 옆 끝에서 15cm, 선 굵기 7.6cm
+    #   홈플레이트는 베이스와 같은 배율로 키운 폭 1.12m (실제 43.2cm)
     home = frame(0, 0, yaw=-45)
-    t = 0.045
+    t = 0.0125
     for s in (-1, 1):
-        cu, hw, hl = 1.2 * s, 0.5, 0.95
+        cu, hw, hl = 0.433 * s, 0.2, 0.3
         plate(m, 'line', home, (cu - hw, cu + hw), (hl - t, hl + t), 0.10)
         plate(m, 'line', home, (cu - hw, cu + hw), (-hl - t, -hl + t), 0.10)
         plate(m, 'line', home, (cu - hw - t, cu - hw + t), (-hl - t, hl + t), 0.10)
         plate(m, 'line', home, (cu + hw - t, cu + hw + t), (-hl - t, hl + t), 0.10)
     for s in (-1, 1):                       # 대기 타석
-        cap(m, 'dirt', [tp(home, 4.0 * s + 0.7 * math.cos(k * math.pi / 6), 0, 0.5 + 0.7 * math.sin(k * math.pi / 6))[[0, 2]]
+        cap(m, 'dirt', [tp(home, 4.0 * s + ONDECK_R * math.cos(k * math.pi / 6), 0, 0.5 + ONDECK_R * math.sin(k * math.pi / 6))[[0, 2]]
                         for k in range(12)], 0.02)
-    penta = [(-0.3, 0.3), (0.3, 0.3), (0.3, 0.0), (0.0, -0.3), (-0.3, 0.0)]
+    ph = 0.1833                             # 홈플레이트 폭의 절반 (56cm)
+    penta = [(-ph, ph), (ph, ph), (ph, 0.0), (0.0, -ph), (-ph, 0.0)]
     m.face('line', [tp(home, u, 0.12, v) for u, v in penta])
 
-    # 베이스 3개
-    d = BASE_DIST
-    for a, b in ((d, 0), (d, d), (0, d)):
-        box(m, 'line', frame(a, b), (-0.42, 0.42), (0.04, 0.22), (-0.42, 0.42), inset=0.07)
+    # 베이스 3개: 한 변이 선수 인형 받침 지름(98cm)인 정사각형. 윗면(0.13)이 선(0.10)보다 위에 오게 한다.
+    # 1·3루는 바깥 모서리가 파울라인에 닿도록 페어 지역 안쪽으로 반 칸 들인다.
+    d, h = BASE_DIST, BASE_HALF
+    for a, b in ((d - h, h), (d, d), (h, d - h)):
+        box(m, 'line', frame(a, b), (-h, h), (0.04, 0.13), (-h, h), inset=0.01)
 
 
 def build_fence(m):

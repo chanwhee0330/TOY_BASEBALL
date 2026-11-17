@@ -34,11 +34,26 @@
   <ItemGroup>
     <ClCompile Include="TOY_BASEBALL.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Pitcher.cpp" />
+    <ClCompile Include="Batter.cpp" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Pitcher.h" />
+    <ClInclude Include="Batter.h" />
+    <ClInclude Include="Player.h" />
     <None Include="vertex.glsl" />
     <None Include="fragment.glsl" />
     <None Include="..\Assets\Models\stadium.obj" />
     <None Include="..\Assets\Models\stadium.mtl" />
+    <None Include="..\Assets\Models\player_red.obj" />
+    <None Include="..\Assets\Models\player_red.mtl" />
+    <None Include="..\Assets\Models\player_blue.obj" />
+    <None Include="..\Assets\Models\player_blue.mtl" />
+    <None Include="..\Assets\Models\bat.obj" />
+    <None Include="..\Assets\Models\bat.mtl" />
+    <None Include="..\Assets\Models\ball.obj" />
+    <None Include="..\Assets\Models\ball.mtl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

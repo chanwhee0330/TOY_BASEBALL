@@ -31,6 +31,10 @@
     <GraphicsRuntimeFile Include="$(GraphicsDependencyRoot)bin\$(Platform)\glew32.dll;$(GraphicsDependencyRoot)bin\$(Platform)\glfw3.dll" />
     <GraphicsRuntimeFile Include="$(GraphicsProjectRoot)Game\*.glsl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\stadium.obj;$(GraphicsProjectRoot)Assets\Models\stadium.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_red.obj;$(GraphicsProjectRoot)Assets\Models\player_red.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_blue.obj;$(GraphicsProjectRoot)Assets\Models\player_blue.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\bat.obj;$(GraphicsProjectRoot)Assets\Models\bat.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\ball.obj;$(GraphicsProjectRoot)Assets\Models\ball.mtl" />
     <UpToDateCheckInput Include="@(GraphicsRuntimeFile);@(GraphicsModelFile)" />
     <UpToDateCheckOutput Include="@(GraphicsRuntimeFile->'$(OutDir)%(Filename)%(Extension)');@(GraphicsModelFile->'$(OutDir)Assets\Models\%(Filename)%(Extension)')" />
   </ItemGroup>
