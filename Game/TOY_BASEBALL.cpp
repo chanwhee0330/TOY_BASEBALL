@@ -19,6 +19,7 @@
 #include "Batter.h"
 #include "Mesh.h"
 #include "Pitcher.h"
+#include "PitchingMachine.h"
 
 //--- 셰이더, 출력 함수
 std::string filetobuf(const std::filesystem::path& filePath);
@@ -32,6 +33,7 @@ GLint height = 800;
 GLuint shaderProgramID = 0;
 Mesh stadium;
 Pitcher pitcher;
+PitchingMachine pitchingMachine;
 Batter batter;
 
 int main()
@@ -84,10 +86,12 @@ int main()
 	if (shaderProgramID == 0
 		|| !InitBuffer(modelDirectory / "stadium.obj", stadium)
 		|| !pitcher.Init(modelDirectory)
+		|| !pitchingMachine.Init(modelDirectory)
 		|| !batter.Init(modelDirectory))
 	{
 		DeleteBuffer(stadium);
 		pitcher.Delete();
+		pitchingMachine.Delete();
 		batter.Delete();
 		if (shaderProgramID != 0) glDeleteProgram(shaderProgramID);
 		glfwDestroyWindow(window);
@@ -110,6 +114,7 @@ int main()
 
 	DeleteBuffer(stadium);
 	pitcher.Delete();
+	pitchingMachine.Delete();
 	batter.Delete();
 	glDeleteProgram(shaderProgramID);
 	glfwDestroyWindow(window);
@@ -215,6 +220,7 @@ GLvoid drawScene()
 
 	drawMesh(shaderProgramID, stadium, glm::mat4(1.0f), viewProjection);
 	pitcher.Draw(shaderProgramID, viewProjection);
+	pitchingMachine.Draw(shaderProgramID, viewProjection);
 	batter.Draw(shaderProgramID, viewProjection);
 
 	glBindVertexArray(0);

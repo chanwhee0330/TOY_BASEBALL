@@ -37,11 +37,13 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Pitcher.cpp" />
     <ClCompile Include="Batter.cpp" />
+    <ClCompile Include="PitchingMachine.cpp" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Pitcher.h" />
     <ClInclude Include="Batter.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PitchingMachine.h" />
     <None Include="vertex.glsl" />
     <None Include="fragment.glsl" />
     <None Include="..\Assets\Models\stadium.obj" />
@@ -54,6 +56,8 @@
     <None Include="..\Assets\Models\bat.mtl" />
     <None Include="..\Assets\Models\ball.obj" />
     <None Include="..\Assets\Models\ball.mtl" />
+    <None Include="..\Assets\Models\pitching_machine.obj" />
+    <None Include="..\Assets\Models\pitching_machine.mtl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

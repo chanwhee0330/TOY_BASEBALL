@@ -1,0 +1,65 @@
+# materials for pitching_machine.obj
+
+newmtl machine_dark
+Ka 0.200 0.220 0.260
+Kd 0.200 0.220 0.260
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl machine_orange
+Ka 0.930 0.500 0.220
+Kd 0.930 0.500 0.220
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl metal
+Ka 0.740 0.770 0.810
+Kd 0.740 0.770 0.810
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl machine_mouth
+Ka 0.050 0.050 0.060
+Kd 0.050 0.050 0.060
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl tire
+Ka 0.100 0.100 0.110
+Kd 0.100 0.100 0.110
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl ball_white
+Ka 0.970 0.970 0.940
+Kd 0.970 0.970 0.940
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl button
+Ka 0.900 0.910 0.930
+Kd 0.900 0.910 0.930
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl button_arrow
+Ka 0.930 0.500 0.220
+Kd 0.930 0.500 0.220
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
