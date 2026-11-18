@@ -138,23 +138,27 @@ def build_bat():
     return m
 
 
+def add_bent_arm(m, team, shoulder, elbow, hand):
+    for start, end in ((shoulder, elbow), (elbow, hand)):
+        axis = end - start
+        axis /= np.linalg.norm(axis)
+        across = np.cross(axis, (0, 1, 0))
+        across /= np.linalg.norm(across)
+        up = np.cross(axis, across)
+        pts = [center + radius * (u * across + v * up)
+               for center, radius in ((start - 0.05 * axis, 0.105),
+                                      (end + 0.05 * axis, 0.09))
+               for u, v in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        ms.hexa(m, pts, team)
+
+
 def add_fielding_arms(m, team):
     # 홈플레이트 쪽(+Z)을 향해 양팔을 내민 자세.
     for side in (-1, 1):
         shoulder = np.array((0.36 * side, 1.32, 0.00))
         elbow = np.array((0.54 * side, 0.98, 0.24))
         hand = np.array((0.31 * side, 1.02, 0.64))
-        for start, end in ((shoulder, elbow), (elbow, hand)):
-            axis = end - start
-            axis /= np.linalg.norm(axis)
-            across = np.cross(axis, (0, 1, 0))
-            across /= np.linalg.norm(across)
-            up = np.cross(axis, across)
-            pts = [center + radius * (u * across + v * up)
-                   for center, radius in ((start - 0.05 * axis, 0.105),
-                                          (end + 0.05 * axis, 0.09))
-                   for u, v in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-            ms.hexa(m, pts, team)
+        add_bent_arm(m, team, shoulder, elbow, hand)
         if side == -1:
             sphere(m, 'skin', hand, 0.115, segs=8, rings=6)
 
@@ -175,7 +179,7 @@ def add_fielding_arms(m, team):
         m.face('glove_pocket', [center + (0, 0, 0.025), rings[3][i], rings[3][j]], normal=(0, 0, 1))
 
 
-def build_player(team, fielding=False):
+def build_player(team, fielding=False, running=False):
     m = Mesh(np.eye(3))
     # 받침, 다리, 몸통
     lathe(m, [(0.55, 0.00, 'fig_base'), (0.55, 0.08, 'fig_base'), (0.48, 0.14, 'fig_base'),
@@ -195,6 +199,39 @@ def build_player(team, fielding=False):
         m.face(team, q, normal=(0, -1, 0))
     if fielding:
         add_fielding_arms(m, team)
+        return m
+
+    if running:
+        # +Z 방향으로 달리는 주자. 양팔은 서로 반대 방향으로 흔든다.
+        for side in (-1, 1):
+            shoulder = np.array((0.36 * side, 1.32, 0.0))
+            elbow = np.array((0.49 * side, 0.95, 0.24 * side))
+            hand = np.array((0.41 * side, 1.16, 0.57 * side))
+            forearm = hand - elbow
+            wrist = hand - 0.15 * forearm / np.linalg.norm(forearm)
+            # 팔꿈치 단면을 위팔과 아래팔이 공유하도록 연결한다.
+            upper = elbow - shoulder
+            upper /= np.linalg.norm(upper)
+            lower = forearm / np.linalg.norm(forearm)
+            across = np.cross(upper, lower)
+            across /= np.linalg.norm(across)
+            sections = []
+            for center, axis, radius in ((shoulder, upper, 0.105),
+                                         (elbow, upper + lower, 0.095),
+                                         (wrist + 0.05 * lower, lower, 0.09)):
+                up = np.cross(axis, across)
+                up /= np.linalg.norm(up)
+                sections.append([center + radius * (u * across + v * up)
+                                 for u, v in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+            for first, second in zip(sections, sections[1:]):
+                center = sum(first + second) / 8
+                for index in range(4):
+                    next_index = (index + 1) % 4
+                    m.face(team, [first[index], first[next_index],
+                                  second[next_index], second[index]], away=center)
+            m.face(team, sections[0], normal=-upper)
+            m.face(team, sections[-1], normal=lower)
+            sphere(m, 'skin', hand, 0.115, segs=8, rings=6)
         return m
 
     # 팔 (살짝 벌린 상자) + 손
@@ -220,7 +257,9 @@ def main():
             ('player_red', build_player('team_red'), 'Player figure, red team (origin = feet, faces +Z)'),
             ('player_blue', build_player('team_blue'), 'Player figure, blue team (origin = feet, faces +Z)'),
             ('fielder_red', build_player('team_red', fielding=True), 'Fielder figure, red team (origin = feet, faces +Z)'),
-            ('fielder_blue', build_player('team_blue', fielding=True), 'Fielder figure, blue team (origin = feet, faces +Z)'))
+            ('fielder_blue', build_player('team_blue', fielding=True), 'Fielder figure, blue team (origin = feet, faces +Z)'),
+            ('runner_red', build_player('team_red', running=True), 'Runner figure, red team (origin = feet, faces +Z)'),
+            ('runner_blue', build_player('team_blue', running=True), 'Runner figure, blue team (origin = feet, faces +Z)'))
     make_ball_texture(os.path.join(out, BALL_TEX))
     for name, mesh, title in jobs:
         mesh.write(os.path.join(out, name + '.obj'), name + '.mtl', title)

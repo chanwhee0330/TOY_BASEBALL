@@ -30,6 +30,9 @@ public:
 	float PlateCrossingFraction() const { return plateCrossingFraction; }
 
 	bool InFlight() const { return flying; }
+	bool WasBatted() const { return batted; }
+	bool IsStrikePitch() const { return type == PitchType::Fastball && target.x == 0.0f; }
+	int BasesAwarded() const { return basesAwarded; }
 	bool IsFieldable() const { return flying && batted && !clearedFence; }
 	void ResolveFielding(bool touchedDefense);
 	const glm::vec3& Position() const { return position; }
@@ -42,6 +45,7 @@ private:
 	Mesh mesh;
 	bool flying = false;
 	bool batted = false;
+	int basesAwarded = -1;
 	bool clearedFence = false;
 	bool reportedCrossing = false;
 	PitchType type = PitchType::Fastball;

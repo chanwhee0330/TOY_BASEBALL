@@ -12,11 +12,13 @@ class Pitcher
 {
 public:
 	bool Init(const std::filesystem::path& modelDirectory);
-	void Draw(GLuint shaderProgramID, const glm::mat4& viewProjection) const;
+	void Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, bool blue) const;
 	void Delete();
+	const glm::vec3& Position() const { return position; }
 
 private:
 	Mesh mesh;
+	Mesh blueMesh;
 	// 선수 모델은 원점이 발밑이고 +Z(홈 쪽)를 바라본다.
 	// 투구 기계(z = -5.95)의 깔때기 뒤 끝(z = -6.27)에 모자챙이 닿지 않는 자리.
 	// 마운드 경사면 위라 바닥 높이가 꼭대기(0.163)보다 조금 낮다.

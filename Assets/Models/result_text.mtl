@@ -1,0 +1,10 @@
+# materials for result_walk.obj
+
+newmtl board_text
+Ka 0.300 0.210 0.050
+Kd 0.300 0.210 0.050
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.850 0.640 0.200
+d 1.0
+illum 2

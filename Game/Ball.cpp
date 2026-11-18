@@ -32,12 +32,12 @@ namespace
 		"TRIPLE", "DOUBLE", "SINGLE", "HOME RUN!", "SINGLE", "DOUBLE", "TRIPLE"
 	};
 
-	const char* FenceResult(const glm::vec3& contact)
+	int FenceZone(const glm::vec3& contact)
 	{
 		const float angle = glm::degrees(std::atan2(contact.x, -contact.z));
 		constexpr int zoneCount = static_cast<int>(std::size(FENCE_RESULTS));
 		const int zone = glm::clamp(static_cast<int>((angle + 45.0f) * zoneCount / 90.0f), 0, zoneCount - 1);
-		return FENCE_RESULTS[zone];
+		return zone;
 	}
 }
 
@@ -60,7 +60,8 @@ void Ball::ResolveFielding(bool touchedDefense)
 	constexpr float infieldRadius = 9.5f;
 	const glm::vec2 fromMound(position.x, position.z - moundZ);
 	const bool infield = glm::dot(fromMound, fromMound) <= infieldRadius * infieldRadius;
-	std::cout << "  " << (touchedDefense || infield ? "OUT" : "SINGLE") << '\n';
+	basesAwarded = touchedDefense || infield ? 0 : 1;
+	std::cout << "  " << (basesAwarded == 0 ? "OUT" : "SINGLE") << '\n';
 	velocity = glm::vec3(0.0f);
 	flying = false;
 }
@@ -87,6 +88,7 @@ void Ball::Launch(const glm::vec3& from, const glm::vec3& to, float unitsPerSeco
 	position = start;
 	flying = true;
 	batted = false;
+	basesAwarded = -1;
 	clearedFence = false;
 	reportedCrossing = false;
 	plateCrossingFraction = -1.0f;
@@ -210,10 +212,14 @@ void Ball::Update(float deltaTime)
 					{
 						position = glm::mix(previousPosition, position, fraction);
 						position.y = glm::max(position.y, contactY);
-						std::cout << "  " << FenceResult(position) << '\n';
+						const int zone = FenceZone(position);
+						constexpr int zoneBases[] = {3, 2, 1, 4, 1, 2, 3};
+						basesAwarded = zoneBases[zone];
+						std::cout << "  " << FENCE_RESULTS[zone] << '\n';
 						flying = false;
 						return;
 					}
+					basesAwarded = 4;
 					std::cout << "  HOME RUN!\n";
 				}
 			}

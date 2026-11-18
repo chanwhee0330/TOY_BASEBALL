@@ -66,6 +66,14 @@ MATERIALS = {            # 이름: (R, G, B)  /  발광은 EMISSIVE 에 추가
     'roof':        (0.91, 0.93, 0.95),
     'board_frame': (0.17, 0.19, 0.22),
     'board_face':  (0.07, 0.13, 0.16),
+    'board_grid':  (0.32, 0.40, 0.43),
+    'board_text':  (0.30, 0.21, 0.05),
+    'base_empty':  (0.95, 0.95, 0.95),
+    'base_occupied': (1.0, 0.43, 0.08),
+    'count_off': (0.20, 0.22, 0.23),
+    'count_ball': (0.12, 0.65, 0.23),
+    'count_strike': (0.86, 0.57, 0.07),
+    'count_out': (0.78, 0.12, 0.10),
     'lamp_green':  (0.35, 0.85, 0.40),
     'metal':       (0.54, 0.58, 0.62),
     'bulb':        (1.00, 0.96, 0.78),
@@ -74,7 +82,10 @@ MATERIALS = {            # 이름: (R, G, B)  /  발광은 EMISSIVE 에 추가
     'hole_dark':   (0.06, 0.09, 0.11),
     'hole_rim':    (0.91, 0.93, 0.95),
 }
-EMISSIVE = {'bulb': (0.9, 0.85, 0.6)}
+EMISSIVE = {'bulb': (0.9, 0.85, 0.6), 'board_text': (0.85, 0.64, 0.20),
+            'base_empty': (0.65, 0.65, 0.65), 'base_occupied': (0.75, 0.27, 0.025),
+            'count_ball': (0.12, 0.85, 0.22), 'count_strike': (0.93, 0.65, 0.08),
+            'count_out': (0.95, 0.11, 0.06)}
 TEXTURES = {}           # 재질 이름: 텍스처 파일 (map_Kd). 소품 스크립트에서 채운다
 
 
@@ -465,32 +476,72 @@ def build_stand(m, M, width, steps, depth, seat_mat, base_h=1.0, rise=0.78, bloc
     return top + wall_h + 0.12, vb
 
 
+def add_base_indicator(m, M, top, vb, base, occupied=False):
+    u, height = ((5.52, 0.85), (4.83, 1.51), (4.14, 0.85))[base - 1]
+    y = top + 0.8 + height
+    front = vb - (0.25 if occupied else 0.23)
+    material = 'base_occupied' if occupied else 'base_empty'
+    radius = 0.34
+    m.face(material, [tp(M, x, h, front) for x, h in
+                      ((u - radius, y), (u, y - radius), (u + radius, y), (u, y + radius))],
+           toward=tp(M, u, y, front - 1))
+
+
+COUNT_ROWS = (
+    (3.95, 'count_ball', 3, ('110', '101', '110', '101', '110')),
+    (3.17, 'count_strike', 2, ('111', '100', '111', '001', '111')),
+    (2.39, 'count_out', 2, ('111', '101', '101', '101', '111')),
+)
+
+
+def add_count_lamp(m, M, top, vb, row, index, lit=False):
+    height, mat, _, _ = COUNT_ROWS[row]
+    u, y = 4.25 + index * 0.58, top + 0.8 + height
+    front = vb - (0.24 if lit else 0.22)
+    box(m, mat if lit else 'count_off', M, (u, u + 0.39), (y - 0.2, y + 0.2),
+        (front, vb - 0.16), skip='b2')
+
+
 def build_scoreboard(m, M, top, vb):
-    for u in (-3.0, 3.0):
+    for u in (-4.8, 4.8):
         box(m, 'metal', M, (u - 0.18, u + 0.18), (top, top + 1.0), (vb + 0.05, vb + 0.35))
     h0 = top + 0.8
-    box(m, 'board_frame', M, (-4.4, 4.4), (h0, h0 + 3.0), (vb - 0.1, vb + 0.5), skip='')
-    box(m, 'board_face', M, (-4.1, 4.1), (h0 + 0.3, h0 + 2.7), (vb - 0.16, vb - 0.1), skip='b2')
-    box(m, 'trim', M, (-4.5, 4.5), (h0 + 3.0, h0 + 3.15), (vb - 0.18, vb + 0.58), skip='')
+    box(m, 'board_frame', M, (-6.6, 6.6), (h0, h0 + 4.8), (vb - 0.1, vb + 0.5), skip='')
+    # 위쪽은 타구 판정 문구를 표시할 공간으로 비워 둔다.
+    box(m, 'board_face', M, (-6.3, 6.3), (h0 + 0.3, h0 + 4.5), (vb - 0.16, vb - 0.1), skip='b2')
+    box(m, 'trim', M, (-6.7, 6.7), (h0 + 4.8, h0 + 4.95), (vb - 0.18, vb + 0.58), skip='')
     # 볼(초록 3) / 스트라이크(노랑 2) / 아웃(빨강 2) 램프 자리
-    lamps = ['lamp_green'] * 3 + ['zone_1'] * 2 + ['zone_3'] * 2
-    for k, mat in enumerate(lamps):
-        u = -3.3 + k * 0.75 + (0.5 if k >= 3 else 0) + (0.5 if k >= 5 else 0)
-        box(m, mat, M, (u - 0.2, u + 0.2), (h0 + 0.55, h0 + 0.95), (vb - 0.22, vb - 0.16), skip='b2')
+    for lamp_row, (height, _, count, label) in enumerate(COUNT_ROWS):
+        for index in range(count):
+            add_count_lamp(m, M, top, vb, lamp_row, index)
+        for row, pixels in enumerate(label):
+            for col, pixel in enumerate(pixels):
+                if pixel == '1':
+                    u = 3.6 + col * 0.13
+                    y = h0 + height + 0.26 - row * 0.13
+                    m.face('line', [tp(M, x, h, vb - 0.22)
+                                     for x, h in ((u, y), (u + 0.13, y),
+                                                  (u + 0.13, y + 0.13), (u, y + 0.13))],
+                           toward=tp(M, u, y, vb - 1))
+    for base in (1, 2, 3):
+        add_base_indicator(m, M, top, vb, base)
     # 관중석 위 깃발
-    for k, u in enumerate((-7.4, -5.7, 5.7, 7.4)):
+    for k, u in enumerate((-7.7, -7.0, 7.0, 7.7)):
         box(m, 'metal', M, (u - 0.04, u + 0.04), (top, top + 1.7), (vb + 0.13, vb + 0.21))
         tri = [tp(M, u + 0.04, top + 1.7, vb + 0.17), tp(M, u + 0.04, top + 1.1, vb + 0.17), tp(M, u + 1.0, top + 1.4, vb + 0.17)]
         mat = ('seat_a', 'zone_1', 'seat_b', 'seat_a')[k]
         m.face(mat, tri, away=tp(M, u, top + 1.4, vb + 5))
         m.face(mat, tri, toward=tp(M, u, top + 1.4, vb + 5))
-    # 이닝 점수 칸
-    for row in range(2):
-        for col in range(5):
-            u = -3.5 + col * 1.0
-            hh = h0 + 1.3 + row * 0.65
-            box(m, 'trim', M, (u, u + 0.8), (hh, hh + 0.5), (vb - 0.2, vb - 0.16), skip='b2')
-    box(m, 'zone_2', M, (1.9, 3.7), (h0 + 1.3, h0 + 2.45), (vb - 0.2, vb - 0.16), skip='b2')
+    # 점수표의 열 이름과 숫자는 게임에서 그린다. 칸 경계는 표시 좌표에 맞춘다.
+    edges = (-6.14, -5.32, -4.155, -2.965, -1.775, -0.585, 0.605, 1.795, 2.985)
+    rows = (0.49, 1.17, 1.84, 2.54)
+    for edge in edges:
+        half_width = 0.028 if edge in (-5.32, -1.775) else 0.014
+        box(m, 'board_grid', M, (edge - half_width, edge + half_width),
+            (h0 + rows[0], h0 + rows[-1]), (vb - 0.19, vb - 0.16), skip='b2')
+    for row in rows:
+        box(m, 'board_grid', M, (edges[0] - 0.014, edges[-1] + 0.014),
+            (h0 + row - 0.014, h0 + row + 0.014), (vb - 0.195, vb - 0.16), skip='b2')
 
 
 def build_tower(m, a, b, swap):
@@ -534,16 +585,26 @@ def build_dugout(m, M):
     box(m, 'bench', M, (-3.1, 3.1), (0, 0.4), (0.3, 0.8))
 
 
-def build_stadium():
+def build_stadium(result=None, occupied_base=None, count_lamp=None):
     G = np.array([[1 / S2, 0, -1 / S2], [0, 1, 0], [-1 / S2, 0, -1 / S2]])
     m = Mesh(G)
+    # 중앙 관중석 + 전광판 (홈을 정면으로 바라봄)
+    d = (FENCE_R + FENCE_T + 1.7) / S2
+    C = frame(d, d, yaw=-45)
+    if result is not None or occupied_base is not None or count_lamp is not None:
+        top, vb = build_stand(m, C, 16.0, 4, 1.4, 'seat_a', blocks=4)
+        text = Mesh(G)
+        if count_lamp is not None:
+            add_count_lamp(text, C, top, vb, *count_lamp, lit=True)
+        elif occupied_base is not None:
+            add_base_indicator(text, C, top, vb, occupied_base, occupied=True)
+        else:
+            add_scoreboard_result(text, C, top, vb, result)
+        return text
     build_board(m)
     build_field(m)
     build_fence(m)
 
-    # 중앙 관중석 + 전광판 (홈을 정면으로 바라봄)
-    d = (FENCE_R + FENCE_T + 1.7) / S2
-    C = frame(d, d, yaw=-45)
     top, vb = build_stand(m, C, 16.0, 4, 1.4, 'seat_a', blocks=4)
     build_scoreboard(m, C, top, vb)
 
@@ -560,6 +621,33 @@ def build_stadium():
     return m
 
 
+def add_scoreboard_result(m, frame, top, vb, result):
+    from PIL import Image, ImageDraw, ImageFont
+
+    font = ImageFont.load_default(size=24)
+    left, upper, right, lower = font.getbbox(result)
+    mask = Image.new('L', (right - left, lower - upper))
+    ImageDraw.Draw(mask).text((-left, -upper), result, fill=255, font=font)
+    # 점수표 윗선(h0 + 2.54)과 판정 문구 사이에 여백을 둔다.
+    pixel = min(8.3 / mask.width, 0.94 / mask.height)
+    front = vb - 0.24
+    for row in range(mask.height):
+        start = None
+        for col in range(mask.width + 1):
+            if col < mask.width and mask.getpixel((col, row)) >= 128:
+                if start is None:
+                    start = col
+            elif start is not None:
+                x0 = -1.4 + (start - mask.width / 2) * pixel
+                x1 = -1.4 + (col - mask.width / 2) * pixel
+                y1 = top + 0.8 + 3.5 + (mask.height / 2 - row) * pixel
+                y0 = y1 - pixel
+                m.face('board_text', [tp(frame, x, y, front)
+                                      for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))],
+                       toward=tp(frame, x0, y0, front - 1))
+                start = None
+
+
 def build_hole():
     """수비 구멍 1개. 원점 중심, 바닥(y=0) 위에 얹는 얇은 링. x/z 로 이동시켜 사용."""
     m = Mesh(np.eye(3))
@@ -572,10 +660,44 @@ def build_hole():
     return m
 
 
+def build_score_glyph(character):
+    from PIL import Image, ImageDraw, ImageFont
+
+    mesh = Mesh(np.eye(3))
+    font = ImageFont.load_default(size=24)
+    left, upper, right, lower = font.getbbox(character)
+    mask = Image.new('L', (right - left, lower - upper))
+    ImageDraw.Draw(mask).text((-left, -upper), character, fill=255, font=font)
+    for row in range(mask.height):
+        for col in range(mask.width):
+            if mask.getpixel((col, row)) < 128:
+                continue
+            x = 0.64 * col / mask.width
+            y = (mask.height - row - 1) / mask.height
+            dx, dy = 0.64 / mask.width, 1.0 / mask.height
+            mesh.face('board_text', [(x, y, 0), (x+dx, y, 0),
+                                     (x+dx, y+dy, 0), (x, y+dy, 0)], normal=(0, 0, 1))
+    return mesh
+
+
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     out = os.path.join(root, 'Assets', 'Models')
     os.makedirs(out, exist_ok=True)
+    for index, character in enumerate('0123456789RHEB-'):
+        build_score_glyph(character).write(
+            os.path.join(out, f'score_glyph_{index}.obj'), 'score_glyph.mtl', character)
+    for row, (_, material, count, _) in enumerate(COUNT_ROWS):
+        for index in range(count):
+            name = f'{material}_{index + 1}'
+            build_stadium(count_lamp=(row, index)).write(
+                os.path.join(out, name + '.obj'), material + '.mtl', name)
+    for base in (1, 2, 3):
+        build_stadium(occupied_base=base).write(
+            os.path.join(out, f'scoreboard_base_{base}.obj'), 'scoreboard_base.mtl', f'Occupied base {base}')
+    for result in ('OUT', 'SINGLE', 'DOUBLE', 'TRIPLE', 'HOME RUN', 'WALK'):
+        name = 'result_' + result.lower().replace(' ', '_')
+        build_stadium(result).write(os.path.join(out, name + '.obj'), 'result_text.mtl', result)
     for name, mesh, title in (('stadium', build_stadium(), 'Toy baseball stadium'),
                               ('hole', build_hole(), 'Fielder hole (moving out pocket)')):
         mesh.write(os.path.join(out, name + '.obj'), name + '.mtl', title)

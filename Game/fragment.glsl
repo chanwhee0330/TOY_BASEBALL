@@ -10,6 +10,7 @@ uniform bool receiveBallShadow;
 uniform vec3 ballPosition;
 uniform float ballRadius;
 uniform bool depthPass;
+uniform vec3 sparkColor;
 uniform bool useShadowMap;
 uniform mat4 lightViewProjection;
 uniform sampler2DShadow shadowMap;
@@ -63,6 +64,11 @@ void main()
     if (depthPass)
     {
         color = vec4(0.0);
+        return;
+    }
+    if (any(greaterThan(sparkColor, vec3(0.0))))
+    {
+        color = vec4(sparkColor, 1.0);
         return;
     }
 

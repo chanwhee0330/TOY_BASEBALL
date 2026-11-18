@@ -1,0 +1,10 @@
+# materials for scoreboard_base_3.obj
+
+newmtl base_occupied
+Ka 1.000 0.430 0.080
+Kd 1.000 0.430 0.080
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.750 0.270 0.025
+d 1.0
+illum 2

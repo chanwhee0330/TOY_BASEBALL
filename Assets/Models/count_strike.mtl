@@ -1,0 +1,10 @@
+# materials for count_strike_2.obj
+
+newmtl count_strike
+Ka 0.860 0.570 0.070
+Kd 0.860 0.570 0.070
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.930 0.650 0.080
+d 1.0
+illum 2

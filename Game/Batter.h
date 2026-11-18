@@ -14,13 +14,16 @@ class Batter
 {
 public:
 	bool Init(const std::filesystem::path& modelDirectory);
-	void StartSwing(double now, bool lowSwing);
+	bool StartSwing(double now, bool lowSwing);
 	void CheckContact(double stepEnd, float stepTime, int stance, Ball& ball);
-	void Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance) const;
+	void Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance, bool red) const;
 	void Delete();
+	void ResetSwing() { swingStartTime = -1.0; connected = false; }
+	const glm::vec3& Position() const { return position; }
 
 private:
 	Mesh mesh;
+	Mesh redMesh;
 	Mesh batMesh;
 	// 선수 모델은 원점이 발밑이고 +Z(홈 쪽)를 바라본다.
 	// 3루 쪽 타석 한가운데 (홈플레이트 중심에서 1.32m 옆).

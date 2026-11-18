@@ -1,0 +1,10 @@
+# materials for count_ball_3.obj
+
+newmtl count_ball
+Ka 0.120 0.650 0.230
+Kd 0.120 0.650 0.230
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.120 0.850 0.220
+d 1.0
+illum 2

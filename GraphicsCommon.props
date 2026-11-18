@@ -31,9 +31,14 @@
     <GraphicsRuntimeFile Include="$(GraphicsDependencyRoot)bin\$(Platform)\glew32.dll;$(GraphicsDependencyRoot)bin\$(Platform)\glfw3.dll" />
     <GraphicsRuntimeFile Include="$(GraphicsProjectRoot)Game\*.glsl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\stadium.obj;$(GraphicsProjectRoot)Assets\Models\stadium.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\result_*.obj;$(GraphicsProjectRoot)Assets\Models\result_text.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\scoreboard_base_*.obj;$(GraphicsProjectRoot)Assets\Models\scoreboard_base.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\count_*.obj;$(GraphicsProjectRoot)Assets\Models\count_*.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\score_glyph_*.obj;$(GraphicsProjectRoot)Assets\Models\score_glyph.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_red.obj;$(GraphicsProjectRoot)Assets\Models\player_red.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\player_blue.obj;$(GraphicsProjectRoot)Assets\Models\player_blue.mtl" />
-    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\fielder_red.obj;$(GraphicsProjectRoot)Assets\Models\fielder_red.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\fielder_red.obj;$(GraphicsProjectRoot)Assets\Models\fielder_red.mtl;$(GraphicsProjectRoot)Assets\Models\fielder_blue.obj;$(GraphicsProjectRoot)Assets\Models\fielder_blue.mtl" />
+    <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\runner_blue.obj;$(GraphicsProjectRoot)Assets\Models\runner_blue.mtl;$(GraphicsProjectRoot)Assets\Models\runner_red.obj;$(GraphicsProjectRoot)Assets\Models\runner_red.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\hole.obj;$(GraphicsProjectRoot)Assets\Models\hole.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\bat.obj;$(GraphicsProjectRoot)Assets\Models\bat.mtl" />
     <GraphicsModelFile Include="$(GraphicsProjectRoot)Assets\Models\ball.obj;$(GraphicsProjectRoot)Assets\Models\ball.mtl" />

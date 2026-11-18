@@ -36,17 +36,20 @@ namespace
 bool Batter::Init(const std::filesystem::path& modelDirectory)
 {
 	return InitBuffer(modelDirectory / "player_blue.obj", mesh)
+		&& InitBuffer(modelDirectory / "player_red.obj", redMesh)
 		&& InitBuffer(modelDirectory / "bat.obj", batMesh);
 }
 
-void Batter::StartSwing(double now, bool aimLow)
+bool Batter::StartSwing(double now, bool aimLow)
 {
 	if (now - swingStartTime >= (connected ? HIT_DURATION : SWING_DURATION))
 	{
 		swingStartTime = now;
 		lowSwing = aimLow;
 		connected = false;
+		return true;
 	}
+	return false;
 }
 
 void Batter::CheckContact(double stepEnd, float stepTime, int stance, Ball& ball)
@@ -63,7 +66,7 @@ void Batter::CheckContact(double stepEnd, float stepTime, int stance, Ball& ball
 	if (connected) ball.Update((1.0f - crossingFraction) * stepTime);
 }
 
-void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance) const
+void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, double now, int stance, bool red) const
 {
 	const double elapsed = now - swingStartTime;
 	float swingOffset = 0.0f;
@@ -96,7 +99,7 @@ void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, doubl
 	const glm::vec3 bodyPosition = position + glm::vec3(STANCE_STEP * stance, meters(0.30f) * fallAmount, 0.0f);
 	const glm::mat4 body = glm::rotate(placeOnField(bodyPosition, yaw + swingOffset, PLAYER_SCALE),
 		glm::radians(-90.0f * fallAmount), glm::vec3(1, 0, 0));
-	drawMesh(shaderProgramID, mesh, body, viewProjection);
+	drawMesh(shaderProgramID, red ? redMesh : mesh, body, viewProjection);
 
 	// 배트 모델의 +X(손잡이 → 끝)를 현재 배트 방향으로 돌리는 좌표축을 만든다.
 	const glm::vec3 side = glm::normalize(glm::cross(batDirection, glm::vec3(0, 0, 1)));
@@ -116,5 +119,6 @@ void Batter::Draw(GLuint shaderProgramID, const glm::mat4& viewProjection, doubl
 void Batter::Delete()
 {
 	DeleteBuffer(mesh);
+	DeleteBuffer(redMesh);
 	DeleteBuffer(batMesh);
 }

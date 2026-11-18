@@ -144,9 +144,26 @@ Ns 8.0
 d 1.0
 illum 2
 
-newmtl lamp_green
-Ka 0.350 0.850 0.400
-Kd 0.350 0.850 0.400
+newmtl board_grid
+Ka 0.320 0.400 0.430
+Kd 0.320 0.400 0.430
+Ks 0.050 0.050 0.050
+Ns 8.0
+d 1.0
+illum 2
+
+newmtl base_empty
+Ka 0.950 0.950 0.950
+Kd 0.950 0.950 0.950
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.650 0.650 0.650
+d 1.0
+illum 2
+
+newmtl count_off
+Ka 0.200 0.220 0.230
+Kd 0.200 0.220 0.230
 Ks 0.050 0.050 0.050
 Ns 8.0
 d 1.0

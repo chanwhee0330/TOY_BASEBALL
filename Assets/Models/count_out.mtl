@@ -1,0 +1,10 @@
+# materials for count_out_2.obj
+
+newmtl count_out
+Ka 0.780 0.120 0.100
+Kd 0.780 0.120 0.100
+Ks 0.050 0.050 0.050
+Ns 8.0
+Ke 0.950 0.110 0.060
+d 1.0
+illum 2
